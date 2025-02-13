@@ -266,13 +266,11 @@
 
     <script>
         document.addEventListener('touchstart', function() {
-            // 1. 먼저 이 함수 추가
-const getSupportedMimeType = () => {
+            const getSupportedMimeType = () => {
     const types = ['audio/mp4', 'audio/webm', 'audio/ogg'];
     return types.find(type => MediaRecorder.isTypeSupported(type)) || 'audio/webm';
 };
 
-// 2. 그 다음 이 함수 추가
 const handleRecordingError = (error) => {
     if (error.name === 'NotAllowedError') {
         showError("마이크 접근을 허용해주세요.");
@@ -286,12 +284,23 @@ const handleRecordingError = (error) => {
     console.error("Recording error:", error);
 };
 
-// 3. 그 다음 이 설정 추가
 const API_CONFIG = {
     baseUrl: process.env.API_BASE_URL || '',
     endpoints: {
         upload: '/api/upload'
     }
+};
+
+const debounce = (func, wait) => {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 };
 
 // 4. 그 다음 이 클래스 추가
