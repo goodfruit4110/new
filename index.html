@@ -8,23 +8,14 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         :root {
-    --primary-color: #FF3B30; /* 레드로 변경 */
-    --recording-color: #2D63E2; /* 기존 블루 색상 추가 */
-}
-
-.record-button {
-    background: var(--primary-color); /* 초기 상태는 레드 */
-}
-
-.record-button.recording {
-    background: var(--recording-color); /* 녹음 중에는 블루 */
-}
-            --primary-dark: #1E3FA3;
-            --error-color: #FF3B30;
-            --success-color: #34C759;
-            --background-color: #FFFFFF;
-            --text-color: #1C1C1E;
-            --border-color: #E5E5EA;
+          --primary-color: #FF3B30; /* 레드로 변경 */
+          --recording-color: #2D63E2; /* 기존 블루 색상 추가 */
+          --primary-dark: #1E3FA3;
+          --error-color: #FF3B30;
+          --success-color: #34C759;
+          --background-color: #FFFFFF;
+          --text-color: #1C1C1E;
+          --border-color: #E5E5EA;
         }
 
         body {
@@ -58,25 +49,26 @@
         }
 
         .record-button {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            border: none;
-            position: relative;
-            margin: 40px auto;
-            display: block;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: var(--primary-color); /* 초기 상태는 레드 */
+    border: none;
+    position: relative;
+    margin: 40px auto;
+    display: block;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
 
-        .record-button:hover {
-            transform: scale(1.05);
-        }
+.record-button:hover {
+    transform: scale(1.05);
+}
 
-        .record-button.recording {
-            animation: pulse 1.5s infinite;
-        }
+.record-button.recording {
+    background: var(--recording-color); /* 녹음 중에는 블루 */
+    animation: pulse 1.5s infinite;
+}
 
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(45, 99, 226, 0.4); }
