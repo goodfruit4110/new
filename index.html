@@ -346,7 +346,7 @@ const debounce = (func, wait) => {
 };
 
 const handleRecordButtonClick = debounce(() => {
-    if (!recordingState.isRecording) {
+    if (!isRecording) {
         startRecording();
     } else {
         stopRecording();
@@ -528,7 +528,7 @@ mediaRecorder = new MediaRecorder(mediaStream, {
             }
         });
 
-        document.getElementById("recordButton").addEventListener("click", handleRecordButtonClick);
+        document.getElementById("recordButton").addEventListener("click", () => {
             showStep(2);
             setupNumpad('codeInput1', 'step2Next');
         });
