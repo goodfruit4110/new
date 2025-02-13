@@ -291,9 +291,35 @@
         async function initializeAudio() {
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // initializeAudio에서는 mediaStream을 생성하지 않음
             } catch (error) {
                 console.error('오디오 초기화 오류:', error);
+            }
+        }
+
+        // 마이크 스트림 획득
+        async function getMediaStream() {
+            try {
+                if (mediaStream) {
+                    // 기존 스트림이 있다면 모든 트랙 종료
+                    mediaStream.getTracks().forEach(track => track.stop());
+                }
+                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                return mediaStream;
+            } catch (error) {
+                console.error('마이크 접근 오류:', error);
+                throw error;
+            }
+        }
+
+        // 모든 미디어 리소스 정리
+        function cleanupMediaResources() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            if (mediaRecorder) {
+                mediaRecorder = null;
             }
         }
 
@@ -346,6 +372,9 @@
                     await audioContext.resume();
                 }
                 
+                // 녹음 시작 시에만 마이크 스트림 획득
+                await getMediaStream();
+                
                 mediaRecorder = new MediaRecorder(mediaStream);
                 audioChunks = [];
 
@@ -375,7 +404,6 @@
                 console.error('녹음 오류:', error);
                 if (!mediaStream) {
                     alert("마이크 접근을 허용해주세요.");
-                    await initializeAudio();
                 }
             }
         }
@@ -383,8 +411,7 @@
         function stopRecording() {
             if (mediaRecorder && isRecording) {
                 mediaRecorder.stop();
-                mediaStream.getTracks().forEach(track => track.stop());
-                initializeAudio(); // 새로운 스트림 준비
+                cleanupMediaResources(); // 모든 미디어 리소스 정리
             }
             stopTimer();
             isRecording = false;
