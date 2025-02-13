@@ -248,7 +248,7 @@
         <div class="step" id="step2">
             <h2>액세스 코드 설정</h2>
             <div class="code-input-container" id="accessCodeInputs">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
+                <input type="number" class="code-input" maxlength="1" inputmode="numeric" autocomplete="off" onclick="this.select()" pattern="\d*">
                 <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
                 <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
                 <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
@@ -335,9 +335,12 @@
             if (stepNumber === 2 || stepNumber === 3) {
                 const containerId = stepNumber === 2 ? 'accessCodeInputs' : 'confirmCodeInputs';
                 const firstInput = document.querySelector(`#${containerId} .code-input`);
+                
+                // 애니메이션이 완료된 후 포커스 및 클릭 이벤트 발생
                 setTimeout(() => {
                     firstInput.focus();
-                }, 300); // 애니메이션 완료 후 포커스
+                    firstInput.click(); // 모바일 키보드를 강제로 띄우기 위한 클릭 이벤트
+                }, 300);
             }
         }
 
@@ -517,6 +520,18 @@
             return Array.from(inputs).map(input => input.value).join('');
         }
 
+        function hasRepeatingPattern(code) {
+            // 4번 이상 연속 반복되는 숫자 체크
+            for (let i = 0; i <= code.length - 4; i++) {
+                if (code[i] === code[i+1] && 
+                    code[i] === code[i+2] && 
+                    code[i] === code[i+3]) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         function isSequentialNumber(code) {
             const ascending = '0123456789';
             const descending = '9876543210';
@@ -529,6 +544,9 @@
             }
             if (isSequentialNumber(code)) {
                 return { valid: false, message: "연속된 숫자는 사용할 수 없습니다." };
+            }
+            if (hasRepeatingPattern(code)) {
+                return { valid: false, message: "4번 이상 연속 반복되는 숫자는 사용할 수 없습니다." };
             }
             return { valid: true };
         }
