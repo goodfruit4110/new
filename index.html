@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>음성 메시지 녹음</title>
+    <title>음성 메시지 녹음 및 비밀번호 설정</title>
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; 
-            text-align: center; 
-            padding: 20px; 
-            max-width: 800px; 
-            margin: 0 auto; 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
             background-color: #f5f5f5;
         }
         .container {
@@ -19,15 +19,15 @@
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        button { 
-            padding: 12px 20px; 
-            font-size: 16px; 
-            margin: 10px; 
-            cursor: pointer; 
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
             transition: all 0.3s ease;
-            border: none; 
-            border-radius: 25px; 
-            background-color: #007AFF; 
+            border: none;
+            border-radius: 25px;
+            background-color: #007AFF;
             color: white;
             width: 200px;
             font-weight: bold;
@@ -36,28 +36,12 @@
             background-color: #ccc;
             cursor: not-allowed;
         }
-        button:hover:not(:disabled) { 
+        button:hover:not(:disabled) {
             transform: scale(1.02);
             box-shadow: 0 2px 15px rgba(0,0,0,0.1);
         }
-        #recordButton.recording { 
-            background-color: #FF3B30; 
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse { 
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        #audioPlayer { 
-            margin: 20px auto;
-            width: 100%; 
-            max-width: 500px;
-            display: none;
-        }
-        .access-code-container {
-            margin-top: 20px;
-        }
+        .step { display: none; }
+        .active { display: block; }
         .access-code input {
             width: 40px;
             height: 50px;
@@ -71,98 +55,58 @@
 </head>
 <body>
     <div class="container">
-        <h2>음성 메시지 녹음</h2>
-        <button id="recordButton">녹음 시작</button>
-        <div id="timer"></div>
-        <audio id="audioPlayer" controls playsinline></audio>
-        <p id="status"></p>
-        <button id="setPasswordButton">비밀번호 설정</button>
-        <div class="access-code-container">
-            <p>엑세스 코드 입력:</p>
-            <div class="access-code" id="accessCodeInputs"></div>
+        <div id="step1" class="step active">
+            <h2>음성 메시지 녹음</h2>
+            <button id="recordButton">녹음 시작</button>
+            <audio id="audioPlayer" controls playsinline style="display:none;"></audio>
+            <button id="nextButton" style="display:none;">다음</button>
+        </div>
+        <div id="step2" class="step">
+            <h2>비밀번호 설정</h2>
+            <div class="access-code">
+                <input type="password" maxlength="1">
+                <input type="password" maxlength="1">
+                <input type="password" maxlength="1">
+                <input type="password" maxlength="1">
+                <input type="password" maxlength="1">
+                <input type="password" maxlength="1">
+            </div>
             <p id="confirmText"></p>
-            <button id="reenterCode" style="display:none;">재입력</button>
-            <button id="submitCode" style="display:none;">전송하기</button>
+            <button id="submitButton" disabled>전송하기</button>
         </div>
     </div>
-    
     <script>
-        const recordButton = document.getElementById('recordButton');
-        const audioPlayer = document.getElementById('audioPlayer');
-        let mediaRecorder;
-        let audioChunks = [];
-        let isRecording = false;
-        let mediaStream;
-
-        recordButton.addEventListener('click', async () => {
-            if (!isRecording) {
-                try {
-                    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'audio/mp4' });
-                    audioChunks = [];
-
-                    mediaRecorder.ondataavailable = event => {
-                        if (event.data.size > 0) {
-                            audioChunks.push(event.data);
-                        }
-                    };
-                    mediaRecorder.onstop = () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/mp4' });
-                        audioPlayer.src = URL.createObjectURL(audioBlob);
-                        audioPlayer.style.display = 'block';
-                        audioPlayer.play();
-                        mediaStream.getTracks().forEach(track => track.stop());
-                    };
-                    mediaRecorder.start();
-                    isRecording = true;
-                    recordButton.textContent = '녹음 중지';
-                    recordButton.classList.add('recording');
-                } catch (error) {
-                    console.error(error);
-                }
-            } else {
-                mediaRecorder.stop();
-                isRecording = false;
-                recordButton.textContent = '녹음 시작';
-                recordButton.classList.remove('recording');
-            }
-        });
-
-        // 6자리 엑세스 코드 입력
-        const accessCodeInputs = document.getElementById('accessCodeInputs');
-        const confirmText = document.getElementById('confirmText');
-        const reenterCode = document.getElementById('reenterCode');
-        const submitCode = document.getElementById('submitCode');
-        let accessCode = "";
-
-        for (let i = 0; i < 6; i++) {
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.maxLength = 1;
-            input.addEventListener('input', (e) => {
-                if (e.target.value.length === 1) {
-                    if (i < 5) input.nextElementSibling.focus();
-                }
-            });
-            accessCodeInputs.appendChild(input);
+        let currentStep = 1;
+        function showStep(step) {
+            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+            document.getElementById(`step${step}`).classList.add('active');
         }
-
-        accessCodeInputs.addEventListener('input', () => {
-            let inputs = accessCodeInputs.querySelectorAll('input');
-            accessCode = Array.from(inputs).map(input => input.value).join('');
-            if (accessCode.length === 6) {
-                confirmText.textContent = '재확인 버튼을 눌러주세요';
-                reenterCode.style.display = 'block';
+        document.getElementById('recordButton').addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mediaRecorder = new MediaRecorder(stream);
+                const audioChunks = [];
+                
+                mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/mp4' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const audioPlayer = document.getElementById('audioPlayer');
+                    audioPlayer.src = audioUrl;
+                    audioPlayer.style.display = 'block';
+                    audioPlayer.play();
+                };
+                
+                mediaRecorder.start();
+                setTimeout(() => mediaRecorder.stop(), 5000);
+                document.getElementById('nextButton').style.display = 'inline-block';
+            } catch (error) {
+                alert('마이크 접근 오류!');
             }
         });
-
-        reenterCode.addEventListener('click', () => {
-            confirmText.textContent = '올바르게 입력되었습니다. 전송 버튼을 눌러주세요';
-            submitCode.style.display = 'block';
-        });
-
-        submitCode.addEventListener('click', () => {
-            alert('코드가 전송되었습니다: ' + accessCode);
+        
+        document.getElementById('nextButton').addEventListener('click', () => {
+            showStep(2);
         });
     </script>
 </body>
