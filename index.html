@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>음성 메시지 업로드</title>
     <style>
-        /* 이전의 모든 CSS 스타일 */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         :root {
@@ -37,75 +36,10 @@
         .step {
             display: none;
             animation: fadeIn 0.3s ease;
-            opacity: 0;
-            transform: translateY(10px);
         }
 
         .step.active {
             display: block;
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* 로딩 애니메이션 */
-        .loading-container {
-            text-align: center;
-            padding: 40px 0;
-        }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid var(--border-color);
-            border-radius: 50%;
-            border-top-color: var(--primary-color);
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .success-message {
-            color: var(--success-color);
-            font-weight: 600;
-            font-size: 18px;
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        .success-icon {
-            width: 60px;
-            height: 60px;
-            background: var(--success-color);
-            border-radius: 50%;
-            margin: 0 auto 20px;
-            position: relative;
-        }
-
-        .success-icon::before,
-        .success-icon::after {
-            content: '';
-            position: absolute;
-            background: white;
-        }
-
-        .success-icon::before {
-            width: 3px;
-            height: 20px;
-            transform: rotate(45deg);
-            left: 28px;
-            top: 18px;
-        }
-
-        .success-icon::after {
-            width: 3px;
-            height: 30px;
-            transform: rotate(-45deg);
-            left: 20px;
-            top: 14px;
         }
 
         @keyframes fadeIn {
@@ -287,6 +221,71 @@
             margin-bottom: 30px;
             font-weight: 600;
         }
+
+        /* 로딩 및 완료 화면 스타일 */
+        .loading-container {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--border-color);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success-container {
+            text-align: center;
+            padding: 40px 0;
+            display: none;
+        }
+
+        .success-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--success-color);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .success-icon::before,
+        .success-icon::after {
+            content: '';
+            position: absolute;
+            background: white;
+        }
+
+        .success-icon::before {
+            width: 3px;
+            height: 20px;
+            transform: rotate(45deg);
+            right: 22px;
+            top: 25px;
+        }
+
+        .success-icon::after {
+            width: 3px;
+            height: 35px;
+            transform: rotate(-45deg);
+            left: 22px;
+            top: 15px;
+        }
+
+        .success-message {
+            color: var(--success-color);
+            font-size: 18px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -313,12 +312,12 @@
         <div class="step" id="step2">
             <h2>액세스 코드 설정</h2>
             <div class="code-input-container" id="accessCodeInputs">
-                <input type="number" class="code-input" maxlength="1" inputmode="numeric" autocomplete="off" onclick="this.select()" pattern="\d*">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
+                <input type="number" class="code-input" pattern="\d*" inputmode="numeric" maxlength="1">
+                <input type="number" class="code-input" pattern="\d*" inputmode="numeric" maxlength="1">
+                <input type="number" class="code-input" pattern="\d*" inputmode="numeric" maxlength="1">
+                <input type="number" class="code-input" pattern="\d*" inputmode="numeric" maxlength="1">
+                <input type="number" class="code-input" pattern="\d*" inputmode="numeric" maxlength="1">
+                <input type="number" class="code-input" pattern="\d*" inputmode="numeric" maxlength="1">
             </div>
             <div class="message" id="accessCodeError"></div>
         </div>
@@ -327,16 +326,27 @@
         <div class="step" id="step3">
             <h2>액세스 코드 확인</h2>
             <div class="code-input-container" id="confirmCodeInputs">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
+                <input type="number" class="code-input" pattern="\d*" inputmode="numeric" maxlength="1">
+                <input type="number" class="code-input" pattern="\d*" inputmode="numeric" maxlength="1">
+                <input type="number" class="code-input" pattern="\d*" inputmode="numeric" maxlength="1">
+                <input type="number" class="code-input" pattern="\d*" inputmode="numeric" maxlength="1">
+                <input type="number" class="code-input" pattern="\d*" inputmode="numeric" maxlength="1">
+                <input type="number" class="code-input" pattern="\d*" inputmode="numeric" maxlength="1">
             </div>
             <div class="message" id="confirmError"></div>
-            <button class="button primary" id="submitButton">보내기</button>
             <button class="button secondary" id="resetButton">다시 설정하기</button>
+        </div>
+
+        <!-- 4단계: 업로드 진행 및 완료 -->
+        <div class="step" id="step4">
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>음성 메시지 업로드 중...</p>
+            </div>
+            <div class="success-container">
+                <div class="success-icon"></div>
+                <p class="success-message">음성 메시지가 업로드되었습니다</p>
+            </div>
         </div>
     </div>
 
@@ -356,7 +366,6 @@
         async function initializeAudio() {
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                // initializeAudio에서는 mediaStream을 생성하지 않음
             } catch (error) {
                 console.error('오디오 초기화 오류:', error);
             }
@@ -366,7 +375,6 @@
         async function getMediaStream() {
             try {
                 if (mediaStream) {
-                    // 기존 스트림이 있다면 모든 트랙 종료
                     mediaStream.getTracks().forEach(track => track.stop());
                 }
                 mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -388,7 +396,6 @@
             }
         }
 
-        // 페이지 로드 시 초기화
         window.addEventListener('load', initializeAudio);
 
         function showStep(stepNumber) {
@@ -396,15 +403,20 @@
             const nextStep = document.getElementById(`step${stepNumber}`);
             nextStep.classList.add('active');
             
-            // 액세스 코드 입력 단계나 확인 단계로 이동할 때
             if (stepNumber === 2 || stepNumber === 3) {
                 const containerId = stepNumber === 2 ? 'accessCodeInputs' : 'confirmCodeInputs';
-                const firstInput = document.querySelector(`#${containerId} .code-input`);
-                
-                // 애니메이션이 완료된 후 포커스 및 클릭 이벤트 발생
+                focusFirstInput(containerId);
+            }
+        }
+
+        function focusFirstInput(containerId) {
+            const firstInput = document.querySelector(`#${containerId} .code-input`);
+            if (firstInput) {
+                // iOS에서 키보드를 강제로 띄우기 위한 트릭
+                firstInput.readOnly = false;
                 setTimeout(() => {
                     firstInput.focus();
-                    firstInput.click(); // 모바일 키보드를 강제로 띄우기 위한 클릭 이벤트
+                    firstInput.click();
                 }, 300);
             }
         }
@@ -440,7 +452,6 @@
                     await audioContext.resume();
                 }
                 
-                // 녹음 시작 시에만 마이크 스트림 획득
                 await getMediaStream();
                 
                 mediaRecorder = new MediaRecorder(mediaStream);
@@ -479,7 +490,7 @@
         function stopRecording() {
             if (mediaRecorder && isRecording) {
                 mediaRecorder.stop();
-                cleanupMediaResources(); // 모든 미디어 리소스 정리
+                cleanupMediaResources();
             }
             stopTimer();
             isRecording = false;
@@ -530,61 +541,6 @@
             isPlaying = !isPlaying;
         }
 
-        function setupCodeInputs(containerId) {
-            const container = document.getElementById(containerId);
-            const inputs = container.getElementsByClassName('code-input');
-
-            Array.from(inputs).forEach((input, index) => {
-                input.addEventListener('input', (e) => {
-                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                    
-                    if (e.target.value) {
-                        if (index < inputs.length - 1) {
-                            inputs[index + 1].focus();
-                        }
-                        
-                        // 모든 필드가 채워졌는지 확인
-                        const allFieldsFilled = Array.from(inputs).every(input => input.value.length === 1);
-                        if (allFieldsFilled) {
-                            const code = getCodeFromInputs(containerId);
-                            const validation = validateAccessCode(code);
-                            
-                            if (validation.valid) {
-                                if (containerId === 'accessCodeInputs') {
-                                    setTimeout(() => showStep(3), 200);
-                                } else if (containerId === 'confirmCodeInputs') {
-                                    setTimeout(() => verifyAndSubmit(), 200);
-                                }
-                            } else {
-                                showError(
-                                    containerId === 'accessCodeInputs' ? 'accessCodeError' : 'confirmError',
-                                    validation.message
-                                );
-                                
-                                // 에러 발생 시 입력 필드 초기화
-                                Array.from(inputs).forEach(input => {
-                                    input.value = '';
-                                });
-                                inputs[0].focus();
-                            }
-                        }
-                    }
-                });
-
-                // 백스페이스 처리
-                input.addEventListener('keydown', (e) => {
-                    if (e.key === 'Backspace' && !e.target.value && index > 0) {
-                        inputs[index - 1].focus();
-                    }
-                });
-            });
-        }
-
-        function getCodeFromInputs(containerId) {
-            const inputs = document.getElementById(containerId).getElementsByClassName('code-input');
-            return Array.from(inputs).map(input => input.value).join('');
-        }
-
         function hasRepeatingPattern(code) {
             // 4번 이상 연속 반복되는 숫자 체크
             for (let i = 0; i <= code.length - 4; i++) {
@@ -616,16 +572,74 @@
             return { valid: true };
         }
 
-        function verifyAndSubmit() {
-            const originalCode = getCodeFromInputs('accessCodeInputs');
-            const confirmCode = getCodeFromInputs('confirmCodeInputs');
+        function setupCodeInputs(containerId) {
+            const container = document.getElementById(containerId);
+            const inputs = container.getElementsByClassName('code-input');
+            const resetButton = document.getElementById("resetButton");
 
-            if (originalCode !== confirmCode) {
-                showError("confirmError", "액세스 코드가 일치하지 않습니다.");
-                return;
-            }
+            Array.from(inputs).forEach((input, index) => {
+                input.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    
+                    if (e.target.value) {
+                        if (index < inputs.length - 1) {
+                            inputs[index + 1].focus();
+                        }
+                        
+                        // 모든 필드가 채워졌는지 확인
+                        const allFieldsFilled = Array.from(inputs).every(input => input.value.length === 1);
+                        
+                        // 리셋 버튼 표시/숨김 처리
+                        if (resetButton && containerId === 'confirmCodeInputs') {
+                            resetButton.style.display = allFieldsFilled ? 'none' : 'block';
+                        }
 
-            alert("음성 메시지가 성공적으로 업로드되었습니다.");
+                        if (allFieldsFilled) {
+                            const code = getCodeFromInputs(containerId);
+                            const validation = validateAccessCode(code);
+                            
+                            if (validation.valid) {
+                                if (containerId === 'accessCodeInputs') {
+                                    setTimeout(() => showStep(3), 200);
+                                } else if (containerId === 'confirmCodeInputs') {
+                                    setTimeout(() => {
+                                        showStep(4);
+                                        simulateUpload();
+                                    }, 200);
+                                }
+                            } else {
+                                showError(
+                                    containerId === 'accessCodeInputs' ? 'accessCodeError' : 'confirmError',
+                                    validation.message
+                                );
+                                
+                                Array.from(inputs).forEach(input => {
+                                    input.value = '';
+                                });
+                                inputs[0].focus();
+                            }
+                        }
+                    }
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                        inputs[index - 1].focus();
+                    }
+                });
+            });
+        }
+
+        function getCodeFromInputs(containerId) {
+            const inputs = document.getElementById(containerId).getElementsByClassName('code-input');
+            return Array.from(inputs).map(input => input.value).join('');
+        }
+
+        function simulateUpload() {
+            setTimeout(() => {
+                document.querySelector('.loading-container').style.display = 'none';
+                document.querySelector('.success-container').style.display = 'block';
+            }, 2000);
         }
 
         // 이벤트 리스너 설정
@@ -644,16 +658,12 @@
                 showStep(2);
             });
 
-            // 다시 설정하기 버튼
             document.getElementById("resetButton").addEventListener("click", function() {
-                // 입력 필드 초기화
                 document.querySelectorAll('.code-input').forEach(input => {
                     input.value = '';
                 });
-                // 에러 메시지 초기화
                 document.getElementById("accessCodeError").textContent = '';
                 document.getElementById("confirmError").textContent = '';
-                // 설정 단계로 돌아가기
                 showStep(2);
             });
 
