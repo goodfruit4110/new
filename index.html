@@ -241,14 +241,14 @@
                 </div>
             </div>
 
-            <button class="button" id="setAccessCodeButton">액세스 코드 설정</button>
+            <button class="button primary" id="setAccessCodeButton" style="display: none;">액세스 코드 설정</button>
         </div>
 
         <!-- 2단계: 액세스 코드 설정 -->
         <div class="step" id="step2">
             <h2>액세스 코드 설정</h2>
             <div class="code-input-container" id="accessCodeInputs">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
                 <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
                 <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
                 <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
@@ -262,14 +262,16 @@
         <div class="step" id="step3">
             <h2>액세스 코드 확인</h2>
             <div class="code-input-container" id="confirmCodeInputs">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
-                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric" autocomplete="off" onclick="this.select()">
             </div>
             <div class="message" id="confirmError"></div>
+            <button class="button primary" id="submitButton">보내기</button>
+            <button class="button secondary" id="resetButton">다시 설정하기</button>
         </div>
     </div>
 
@@ -318,7 +320,18 @@
         function showStep(stepNumber) {
             debug(`스텝 ${stepNumber}로 이동`);
             document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
-            document.getElementById(`step${stepNumber}`).classList.add('active');
+            const nextStep = document.getElementById(`step${stepNumber}`);
+            nextStep.classList.add('active');
+            
+            // 액세스 코드 입력 단계나 확인 단계로 이동할 때
+            if (stepNumber === 2 || stepNumber === 3) {
+                const containerId = stepNumber === 2 ? 'accessCodeInputs' : 'confirmCodeInputs';
+                const firstInput = document.querySelector(`#${containerId} .code-input`);
+                setTimeout(() => {
+                    firstInput.focus();
+                }, 300); // 애니메이션 완료 후 포커스
+            }
+        }
         }
 
         function showError(elementId, message) {
@@ -567,6 +580,21 @@
 
             setupCodeInputs('accessCodeInputs');
             setupCodeInputs('confirmCodeInputs');
+
+            // 다시 설정하기 버튼
+            document.getElementById("resetButton").addEventListener("click", function() {
+                debug('액세스 코드 다시 설정');
+                // 입력 필드 초기화
+                document.querySelectorAll('.code-input').forEach(input => {
+                    input.value = '';
+                    input.classList.remove('filled');
+                });
+                // 에러 메시지 초기화
+                document.getElementById("accessCodeError").textContent = '';
+                document.getElementById("confirmError").textContent = '';
+                // 설정 단계로 돌아가기
+                showStep(2);
+            });
 
             // 개발 모드에서만 디버그 패널 표시
             if (debugMode) {
