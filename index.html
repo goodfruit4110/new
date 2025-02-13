@@ -8,7 +8,17 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         :root {
-            --primary-color: #2D63E2;
+    --primary-color: #FF3B30; /* 레드로 변경 */
+    --recording-color: #2D63E2; /* 기존 블루 색상 추가 */
+}
+
+.record-button {
+    background: var(--primary-color); /* 초기 상태는 레드 */
+}
+
+.record-button.recording {
+    background: var(--recording-color); /* 녹음 중에는 블루 */
+}
             --primary-dark: #1E3FA3;
             --error-color: #FF3B30;
             --success-color: #34C759;
@@ -415,10 +425,10 @@
                         firstInput.focus();
                         
                         // iOS에서 키보드를 강제로 띄우기 위한 추가 처리
-                        if ('ontouchstart' in window) {
-                            firstInput.click();
-                            firstInput.setSelectionRange(0, 0);
-                        }
+if ('ontouchstart' in window) {
+    firstInput.click();
+    firstInput.setSelectionRange(0, 0);
+}
                     }
                 }, 300);
             }
@@ -651,18 +661,44 @@
         }
 
         function simulateUpload() {
-            const loadingContainer = document.querySelector('.loading-container');
-            const successContainer = document.querySelector('.success-container');
-            
-            loadingContainer.style.display = 'block';
-            successContainer.style.display = 'none';
-            
-            // 업로드 시뮬레이션 (2초 후 완료)
-            setTimeout(() => {
-                loadingContainer.style.display = 'none';
-                successContainer.style.display = 'block';
-            }, 2000);
-        }
+    const loadingContainer = document.querySelector('.loading-container');
+    const successContainer = document.querySelector('.success-container');
+    
+    loadingContainer.style.display = 'block';
+    successContainer.style.display = 'none';
+    
+    // 실제 업로드 로직 시뮬레이션
+    setTimeout(() => {
+        loadingContainer.style.display = 'none';
+        successContainer.style.display = 'block';
+        
+        // 3초 후 자동으로 초기 화면으로 돌아가기
+        setTimeout(() => {
+            resetApplication();
+        }, 3000);
+    }, 2000);
+}
+
+function resetApplication() {
+    // 모든 입력 필드 초기화
+    document.querySelectorAll('.code-input').forEach(input => {
+        input.value = '';
+    });
+    
+    // 오디오 플레이어 및 관련 상태 초기화
+    if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+    }
+    
+    // 첫 번째 단계로 돌아가기
+    showStep(1);
+    
+    // 녹음 관련 상태 초기화
+    document.getElementById("audioPlayer").style.display = "none";
+    document.getElementById("setAccessCodeButton").style.display = "none";
+    document.getElementById("timer").textContent = "00:00";
+}
 
         function verifyAndUpload() {
             const code = getCodeFromInputs('confirmCodeInputs');
