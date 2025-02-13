@@ -55,30 +55,17 @@
             max-width: 500px;
             display: none;
         }
-        #status { 
-            margin: 15px 0;
-            padding: 10px;
+        .access-code-container {
+            margin-top: 20px;
+        }
+        .access-code input {
+            width: 40px;
+            height: 50px;
+            text-align: center;
+            font-size: 24px;
+            margin: 5px;
+            border: 2px solid #ccc;
             border-radius: 5px;
-            font-weight: 500;
-        }
-        .status-recording { 
-            background-color: #ffebeb;
-            color: #FF3B30; 
-        }
-        .status-success { 
-            background-color: #e8fff0;
-            color: #34C759; 
-        }
-        .status-error { 
-            background-color: #fff0f0;
-            color: #FF3B30; 
-        }
-        #timer { 
-            font-size: 18px; 
-            color: #FF3B30;
-            font-weight: bold;
-            margin: 15px 0;
-            font-family: monospace;
         }
     </style>
 </head>
@@ -89,100 +76,93 @@
         <div id="timer"></div>
         <audio id="audioPlayer" controls playsinline></audio>
         <p id="status"></p>
+        <button id="setPasswordButton">비밀번호 설정</button>
+        <div class="access-code-container">
+            <p>엑세스 코드 입력:</p>
+            <div class="access-code" id="accessCodeInputs"></div>
+            <p id="confirmText"></p>
+            <button id="reenterCode" style="display:none;">재입력</button>
+            <button id="submitCode" style="display:none;">전송하기</button>
+        </div>
     </div>
-
+    
     <script>
-        const MAX_RECORDING_TIME = 300; // 5분
+        const recordButton = document.getElementById('recordButton');
+        const audioPlayer = document.getElementById('audioPlayer');
         let mediaRecorder;
         let audioChunks = [];
         let isRecording = false;
-        let timerInterval;
-        let seconds = 0;
         let mediaStream;
 
-        function updateStatus(message, type = 'normal') {
-            const status = document.getElementById('status');
-            status.textContent = message;
-            status.className = `status-${type}`;
-        }
+        recordButton.addEventListener('click', async () => {
+            if (!isRecording) {
+                try {
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'audio/mp4' });
+                    audioChunks = [];
 
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = seconds % 60;
-            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-        }
-
-        function startTimer() {
-            seconds = 0;
-            updateTimer();
-            timerInterval = setInterval(() => {
-                seconds++;
-                updateTimer();
-                if (seconds >= MAX_RECORDING_TIME) {
-                    stopRecording();
-                    updateStatus('최대 녹음 시간에 도달했습니다', 'error');
+                    mediaRecorder.ondataavailable = event => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
+                    };
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/mp4' });
+                        audioPlayer.src = URL.createObjectURL(audioBlob);
+                        audioPlayer.style.display = 'block';
+                        audioPlayer.play();
+                        mediaStream.getTracks().forEach(track => track.stop());
+                    };
+                    mediaRecorder.start();
+                    isRecording = true;
+                    recordButton.textContent = '녹음 중지';
+                    recordButton.classList.add('recording');
+                } catch (error) {
+                    console.error(error);
                 }
-            }, 1000);
-        }
-
-        function updateTimer() {
-            document.getElementById('timer').textContent = formatTime(seconds);
-        }
-
-        function stopTimer() {
-            clearInterval(timerInterval);
-            document.getElementById('timer').textContent = '';
-        }
-
-        async function startRecording() {
-            try {
-                const constraints = { audio: true };
-                mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-                mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'audio/mp4' });
-
-                audioChunks = [];
-                mediaRecorder.ondataavailable = event => {
-                    if (event.data.size > 0) {
-                        audioChunks.push(event.data);
-                    }
-                };
-
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/mp4' });
-                    const audioUrl = URL.createObjectURL(audioBlob);
-                    const audioPlayer = document.getElementById('audioPlayer');
-                    audioPlayer.src = audioUrl;
-                    audioPlayer.style.display = 'block';
-
-                    mediaStream.getTracks().forEach(track => track.stop());
-                    updateStatus('녹음이 완료되었습니다', 'success');
-                };
-
-                mediaRecorder.start();
-                startTimer();
-                isRecording = true;
-                document.getElementById('recordButton').textContent = '녹음 중지';
-                document.getElementById('recordButton').classList.add('recording');
-                updateStatus('녹음 중...', 'recording');
-
-            } catch (error) {
-                updateStatus('마이크 접근 오류가 발생했습니다', 'error');
-                console.error(error);
-            }
-        }
-
-        function stopRecording() {
-            if (mediaRecorder && isRecording) {
+            } else {
                 mediaRecorder.stop();
-                stopTimer();
                 isRecording = false;
-                document.getElementById('recordButton').textContent = '녹음 시작';
-                document.getElementById('recordButton').classList.remove('recording');
+                recordButton.textContent = '녹음 시작';
+                recordButton.classList.remove('recording');
             }
+        });
+
+        // 6자리 엑세스 코드 입력
+        const accessCodeInputs = document.getElementById('accessCodeInputs');
+        const confirmText = document.getElementById('confirmText');
+        const reenterCode = document.getElementById('reenterCode');
+        const submitCode = document.getElementById('submitCode');
+        let accessCode = "";
+
+        for (let i = 0; i < 6; i++) {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.maxLength = 1;
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length === 1) {
+                    if (i < 5) input.nextElementSibling.focus();
+                }
+            });
+            accessCodeInputs.appendChild(input);
         }
 
-        document.getElementById('recordButton').addEventListener('click', function() {
-            isRecording ? stopRecording() : startRecording();
+        accessCodeInputs.addEventListener('input', () => {
+            let inputs = accessCodeInputs.querySelectorAll('input');
+            accessCode = Array.from(inputs).map(input => input.value).join('');
+            if (accessCode.length === 6) {
+                confirmText.textContent = '재확인 버튼을 눌러주세요';
+                reenterCode.style.display = 'block';
+            }
+        });
+
+        reenterCode.addEventListener('click', () => {
+            confirmText.textContent = '올바르게 입력되었습니다. 전송 버튼을 눌러주세요';
+            submitCode.style.display = 'block';
+        });
+
+        submitCode.addEventListener('click', () => {
+            alert('코드가 전송되었습니다: ' + accessCode);
         });
     </script>
 </body>
