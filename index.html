@@ -403,9 +403,24 @@
             const nextStep = document.getElementById(`step${stepNumber}`);
             nextStep.classList.add('active');
             
+            // 액세스 코드 입력 단계나 확인 단계로 이동할 때
             if (stepNumber === 2 || stepNumber === 3) {
                 const containerId = stepNumber === 2 ? 'accessCodeInputs' : 'confirmCodeInputs';
-                focusFirstInput(containerId);
+                
+                // 모바일 키보드 자동 활성화를 위한 딜레이 처리
+                setTimeout(() => {
+                    const firstInput = document.querySelector(`#${containerId} .code-input`);
+                    if (firstInput) {
+                        firstInput.readOnly = false;
+                        firstInput.focus();
+                        
+                        // iOS에서 키보드를 강제로 띄우기 위한 추가 처리
+                        if ('ontouchstart' in window) {
+                            firstInput.click();
+                            firstInput.setSelectionRange(0, 0);
+                        }
+                    }
+                }, 300);
             }
         }
 
@@ -636,10 +651,30 @@
         }
 
         function simulateUpload() {
+            const loadingContainer = document.querySelector('.loading-container');
+            const successContainer = document.querySelector('.success-container');
+            
+            loadingContainer.style.display = 'block';
+            successContainer.style.display = 'none';
+            
+            // 업로드 시뮬레이션 (2초 후 완료)
             setTimeout(() => {
-                document.querySelector('.loading-container').style.display = 'none';
-                document.querySelector('.success-container').style.display = 'block';
+                loadingContainer.style.display = 'none';
+                successContainer.style.display = 'block';
             }, 2000);
+        }
+
+        function verifyAndUpload() {
+            const code = getCodeFromInputs('confirmCodeInputs');
+            const validation = validateAccessCode(code);
+            
+            if (!validation.valid) {
+                showError('confirmError', validation.message);
+                return;
+            }
+            
+            showStep(4);
+            simulateUpload();
         }
 
         // 이벤트 리스너 설정
