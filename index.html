@@ -3,110 +3,596 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>음성 메시지 녹음 및 비밀번호 설정</title>
+    <title>음성 메시지 업로드</title>
     <style>
+        :root {
+            --primary-color: #4A90E2;
+            --error-color: #E74C3C;
+            --success-color: #2ECC71;
+            --background-color: #F5F6FA;
+            --text-color: #2C3E50;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
-            text-align: center;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            margin: 0;
             padding: 20px;
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: #f5f5f5;
+            background: var(--background-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+
         .container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        button {
-            padding: 12px 20px;
+
+        .step {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #DDD;
+            margin: 0 5px;
+        }
+
+        .step-dot.active {
+            background: var(--primary-color);
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--text-color);
+            margin-bottom: 30px;
+        }
+
+        .record-button {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary-color);
+            color: white;
             font-size: 16px;
-            margin: 10px;
             cursor: pointer;
             transition: all 0.3s ease;
-            border: none;
-            border-radius: 25px;
-            background-color: #007AFF;
-            color: white;
-            width: 200px;
-            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
         }
-        button:disabled {
-            background-color: #ccc;
+
+        .record-button.recording {
+            background: var(--error-color);
+            animation: pulse 1.5s infinite;
+        }
+
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 300px;
+            margin: 20px auto;
+        }
+
+        .numpad button {
+            padding: 15px;
+            font-size: 20px;
+            border: 1px solid #DDD;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .numpad button:hover {
+            background: #f5f5f5;
+        }
+
+        .code-input {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .code-input input {
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            font-size: 20px;
+            border: 2px solid #DDD;
+            border-radius: 8px;
+            margin: 0 5px;
+        }
+
+        .timer {
+            text-align: center;
+            color: var(--error-color);
+            font-size: 18px;
+            margin: 10px 0;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            text-align: center;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .success-message {
+            color: var(--success-color);
+            text-align: center;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .next-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .next-button:disabled {
+            background: #DDD;
             cursor: not-allowed;
         }
-        button:hover:not(:disabled) {
-            transform: scale(1.02);
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
-        .step { display: none; }
-        .active { display: block; }
-        .access-code input {
-            width: 40px;
-            height: 50px;
-            text-align: center;
-            font-size: 24px;
-            margin: 5px;
-            border: 2px solid #ccc;
-            border-radius: 5px;
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        #audioPlayer {
+            width: 100%;
+            margin: 20px 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div id="step1" class="step active">
-            <h2>음성 메시지 녹음</h2>
-            <button id="recordButton">녹음 시작</button>
-            <audio id="audioPlayer" controls playsinline style="display:none;"></audio>
-            <button id="nextButton" style="display:none;">다음</button>
+        <div class="step-indicator">
+            <div class="step-dot active"></div>
+            <div class="step-dot"></div>
+            <div class="step-dot"></div>
         </div>
-        <div id="step2" class="step">
-            <h2>비밀번호 설정</h2>
-            <div class="access-code">
-                <input type="password" maxlength="1">
-                <input type="password" maxlength="1">
-                <input type="password" maxlength="1">
-                <input type="password" maxlength="1">
-                <input type="password" maxlength="1">
-                <input type="password" maxlength="1">
+
+        <!-- 스텝 1: 녹음 -->
+        <div class="step active" id="step1">
+            <h2>음성 메시지 녹음</h2>
+            <button class="record-button" id="recordButton">
+                녹음
+            </button>
+            <div class="timer" id="timer"></div>
+            <audio id="audioPlayer" controls style="display: none;"></audio>
+            <button class="next-button" id="step1Next" disabled>다음</button>
+        </div>
+
+        <!-- 스텝 2: 액세스 코드 설정 -->
+        <div class="step" id="step2">
+            <h2>액세스 코드 설정</h2>
+            <p>6자리 숫자를 입력해주세요</p>
+            <div class="code-input" id="codeInput1">
+                <input type="password" maxlength="1" pattern="\d" readonly>
+                <input type="password" maxlength="1" pattern="\d" readonly>
+                <input type="password" maxlength="1" pattern="\d" readonly>
+                <input type="password" maxlength="1" pattern="\d" readonly>
+                <input type="password" maxlength="1" pattern="\d" readonly>
+                <input type="password" maxlength="1" pattern="\d" readonly>
             </div>
-            <p id="confirmText"></p>
-            <button id="submitButton" disabled>전송하기</button>
+            <div class="numpad" id="numpad">
+                <button>1</button>
+                <button>2</button>
+                <button>3</button>
+                <button>4</button>
+                <button>5</button>
+                <button>6</button>
+                <button>7</button>
+                <button>8</button>
+                <button>9</button>
+                <button>←</button>
+                <button>0</button>
+                <button>C</button>
+            </div>
+            <div class="error-message" id="error1"></div>
+            <button class="next-button" id="step2Next" disabled>다음</button>
+        </div>
+
+        <!-- 스텝 3: 액세스 코드 확인 -->
+        <div class="step" id="step3">
+            <h2>액세스 코드 확인</h2>
+            <p>액세스 코드를 한번 더 입력해주세요</p>
+            <div class="code-input" id="codeInput2">
+                <input type="password" maxlength="1" pattern="\d" readonly>
+                <input type="password" maxlength="1" pattern="\d" readonly>
+                <input type="password" maxlength="1" pattern="\d" readonly>
+                <input type="password" maxlength="1" pattern="\d" readonly>
+                <input type="password" maxlength="1" pattern="\d" readonly>
+                <input type="password" maxlength="1" pattern="\d" readonly>
+            </div>
+            <div class="numpad" id="numpad2">
+                <button>1</button>
+                <button>2</button>
+                <button>3</button>
+                <button>4</button>
+                <button>5</button>
+                <button>6</button>
+                <button>7</button>
+                <button>8</button>
+                <button>9</button>
+                <button>←</button>
+                <button>0</button>
+                <button>C</button>
+            </div>
+            <div class="error-message" id="error2"></div>
+            <button class="next-button" id="submitButton" disabled>저장하기</button>
         </div>
     </div>
+
     <script>
-        let currentStep = 1;
-        function showStep(step) {
-            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
-            document.getElementById(`step${step}`).classList.add('active');
+        document.addEventListener('touchstart', function() {
+    if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+});
+        let audioContext;
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+        let timerInterval;
+        let seconds = 0;
+        let mediaStream;
+        let accessCode = '';
+        let confirmCode = '';
+        let audioBlob = null;
+
+        // 스텝 관리
+        function showStep(stepNumber) {
+            document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
+            document.querySelectorAll('.step-dot').forEach((dot, index) => {
+                if (index < stepNumber) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+            document.getElementById(`step${stepNumber}`).classList.add('active');
         }
-        document.getElementById('recordButton').addEventListener('click', async () => {
+
+        // 타이머 관리
+        function startTimer() {
+            seconds = 0;
+            document.getElementById("timer").textContent = "0:00";
+            timerInterval = setInterval(() => {
+                seconds++;
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                document.getElementById("timer").textContent = 
+                    `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        // 녹음 관리
+        async function startRecording() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const mediaRecorder = new MediaRecorder(stream);
-                const audioChunks = [];
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioContext.state === "suspended") {
+                    await audioContext.resume();
+                }
                 
-                mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/mp4' });
-                    const audioUrl = URL.createObjectURL(audioBlob);
-                    const audioPlayer = document.getElementById('audioPlayer');
-                    audioPlayer.src = audioUrl;
-                    audioPlayer.style.display = 'block';
-                    audioPlayer.play();
+                mediaStream = await navigator.mediaDevices.getUserMedia({ 
+    audio: {
+        sampleRate: 44100,
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true
+    }
+});
+
+                const mimeType = 'audio/mp4';
+if (!MediaRecorder.isTypeSupported(mimeType)) {
+    console.warn('MP4 not supported, falling back to default format');
+}
+
+mediaRecorder = new MediaRecorder(mediaStream, {
+    mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : 'audio/webm',
+    audioBitsPerSecond: 128000
+});
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
                 };
-                
+
+                mediaRecorder.onstop = () => {
+                    if (audioChunks.length === 0) {
+                        showError("녹음된 음성이 없습니다. 다시 시도해주세요.");
+                        return;
+                    }
+                    
+                    audioBlob = new Blob(audioChunks, { 
+    type: MediaRecorder.isTypeSupported(mimeType) ? mimeType : 'audio/mp4'
+});
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const audioPlayer = document.getElementById("audioPlayer");
+                    audioPlayer.src = audioUrl;
+                    audioPlayer.style.display = "block";
+                    document.getElementById("step1Next").disabled = false;
+
+                    mediaStream.getTracks().forEach(track => track.stop());
+                };
+
                 mediaRecorder.start();
-                setTimeout(() => mediaRecorder.stop(), 5000);
-                document.getElementById('nextButton').style.display = 'inline-block';
+                startTimer();
+                isRecording = true;
+                document.getElementById("recordButton").textContent = "중지";
+                document.getElementById("recordButton").classList.add("recording");
             } catch (error) {
-                alert('마이크 접근 오류!');
+                showError("마이크 접근을 허용해주세요.");
+                console.error("Recording error:", error);
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                stopTimer();
+                isRecording = false;
+                document.getElementById("recordButton").textContent = "녹음";
+                document.getElementById("recordButton").classList.remove("recording");
+            }
+        }
+
+        // 숫자패드 관리
+        function setupNumpad(inputId, nextButtonId, isConfirmStep = false) {
+            const inputs = document.querySelectorAll(`#${inputId} input`);
+            const numpad = document.getElementById(inputId === 'codeInput1' ? 'numpad' : 'numpad2');
+            let currentInput = 0;
+
+            numpad.addEventListener('click', (e) => {
+                if (!e.target.matches('button')) return;
+
+                const value = e.target.textContent;
+                
+                if (value === 'C') {
+                    inputs.forEach(input => input.value = '');
+                    currentInput = 0;
+                    if (isConfirmStep) {
+                        confirmCode = '';
+                    } else {
+                        accessCode = '';
+                    }
+                } else if (value === '←') {
+                    if (currentInput > 0) {
+                        currentInput--;
+                        inputs[currentInput].value = '';
+                        if (isConfirmStep) {
+                            confirmCode = confirmCode.slice(0, -1);
+                        } else {
+                            accessCode = accessCode.slice(0, -1);
+                        }
+                    }
+                } else if (currentInput < inputs.length) {
+                    inputs[currentInput].value = value;
+                    if (isConfirmStep) {
+                        confirmCode += value;
+                    } else {
+                        accessCode += value;
+                    }
+                    currentInput++;
+                }
+
+                const nextButton = document.getElementById(nextButtonId);
+                if (isConfirmStep) {
+                    nextButton.disabled = confirmCode.length !== 6;
+                } else {
+                    nextButton.disabled = accessCode.length !== 6;
+                }
+            });
+        }
+
+        // 이벤트 리스너 설정
+        document.getElementById("recordButton").addEventListener("click", () => {
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
             }
         });
-        
-        document.getElementById('nextButton').addEventListener('click', () => {
+
+        document.getElementById("step1Next").addEventListener("click", () => {
             showStep(2);
+            setupNumpad('codeInput1', 'step2Next');
+        });
+
+        document.getElementById("step2Next").addEventListener("click", () => {
+            showStep(3);
+            setupNumpad('codeInput2', 'submitButton', true);
+        });
+
+        document.getElementById("submitButton").addEventListener("click", async () => {
+            if (accessCode !== confirmCode) {
+                document.getElementById("error2").textContent = "액세스 코드가 일치하지 않습니다. 다시 입력해주세요.";
+                document.querySelectorAll('#codeInput2 input').forEach(input => input.value = '');
+                confirmCode = '';
+                document.getElementById("submitButton").disabled = true;
+                return;
+            }
+
+            try {
+                document.getElementById("submitButton").disabled = true;
+                document.getElementById("submitButton").textContent = "저장 중...";
+
+                // FormData 생성
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'audio.mp4');
+                formData.append('accessCode', accessCode);
+
+                // GCP Cloud Storage에 업로드
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('업로드 실패');
+                }
+
+                const data = await response.json();
+                
+                // 성공 시 UI 업데이트
+                document.getElementById("step3").innerHTML = `
+                    <h2>업로드 완료</h2>
+                    <div class="success-message">
+                        <p>음성 메시지가 성공적으로 저장되었습니다.</p>
+                        <p>액세스 코드: ${accessCode}</p>
+                        <p>음성 메시지 ID: ${data.messageId}</p>
+                    </div>
+                    <button class="next-button" onclick="window.location.reload()">새로운 메시지 녹음하기</button>
+                `;
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                document.getElementById("error2").textContent = "업로드 중 오류가 발생했습니다. 다시 시도해주세요.";
+                document.getElementById("submitButton").disabled = false;
+                document.getElementById("submitButton").textContent = "저장하기";
+            }
+        });
+
+        // 에러 메시지 표시 함수
+        function showError(message) {
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error-message';
+            errorElement.style.position = 'fixed';
+            errorElement.style.top = '20px';
+            errorElement.style.left = '50%';
+            errorElement.style.transform = 'translateX(-50%)';
+            errorElement.style.padding = '10px 20px';
+            errorElement.style.background = 'rgba(231, 76, 60, 0.9)';
+            errorElement.style.color = 'white';
+            errorElement.style.borderRadius = '5px';
+            errorElement.style.zIndex = '1000';
+            errorElement.textContent = message;
+            
+            document.body.appendChild(errorElement);
+            
+            setTimeout(() => {
+                errorElement.remove();
+            }, 3000);
+        }
+
+        // 입력값 유효성 검사
+        function validateInput(input) {
+            return /^\d+$/.test(input);
+        }
+
+        // 코드 입력 필드 포커스 관리
+        function handleCodeInputFocus(inputs) {
+            inputs.forEach((input, index) => {
+                input.addEventListener('keyup', (e) => {
+                    if (validateInput(e.target.value) && index < inputs.length - 1) {
+                        inputs[index + 1].focus();
+                    }
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && index > 0 && !e.target.value) {
+                        inputs[index - 1].focus();
+                    }
+                });
+            });
+        }
+
+        // 백엔드 API 응답 처리
+        async function handleApiResponse(response) {
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || '서버 오류가 발생했습니다.');
+            }
+            return response.json();
+        }
+
+        // 녹음 시간 제한 설정 (예: 5분)
+        const MAX_RECORDING_TIME = 5 * 60; // 5분을 초 단위로 설정
+
+        function checkRecordingTime() {
+            if (seconds >= MAX_RECORDING_TIME) {
+                stopRecording();
+                showError("최대 녹음 시간(5분)에 도달했습니다.");
+            }
+        }
+
+        // 타이머 함수 수정
+        function startTimer() {
+            seconds = 0;
+            document.getElementById("timer").textContent = "0:00";
+            timerInterval = setInterval(() => {
+                seconds++;
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                document.getElementById("timer").textContent = 
+                    `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+                checkRecordingTime();
+            }, 1000);
+        }
+
+        // 오디오 미리보기 볼륨 조절
+        const audioPlayer = document.getElementById("audioPlayer");
+        audioPlayer.addEventListener('loadedmetadata', () => {
+            audioPlayer.volume = 0.7; // 기본 볼륨을 70%로 설정
+        });
+
+        // 페이지 언로드 시 리소스 정리
+        window.addEventListener('beforeunload', () => {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
+            if (audioContext) {
+                audioContext.close();
+            }
         });
     </script>
 </body>
