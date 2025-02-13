@@ -47,7 +47,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 녹음 단계 스타일 */
         .record-button {
             width: 120px;
             height: 120px;
@@ -102,7 +101,6 @@
             min-height: 36px;
         }
 
-        /* 커스텀 오디오 플레이어 */
         .custom-audio-player {
             background: #F2F2F7;
             border-radius: 12px;
@@ -148,7 +146,6 @@
             border-radius: 2px;
         }
 
-        /* 액세스 코드 입력 스타일 */
         .code-input-container {
             display: flex;
             gap: 8px;
@@ -167,10 +164,13 @@
             background: transparent;
         }
 
+        .code-input {
+            border-color: var(--border-color);
+            outline: none;
+        }
+
         .code-input:focus {
             border-color: var(--primary-color);
-            outline: none;
-            background: rgba(45, 99, 226, 0.05);
         }
 
         .code-input.filled {
@@ -188,7 +188,6 @@
             75% { transform: translateX(5px); }
         }
 
-        /* 버튼 스타일 */
         .button {
             width: 100%;
             padding: 16px;
@@ -213,7 +212,6 @@
             cursor: not-allowed;
         }
 
-        /* 메시지 스타일 */
         .message {
             text-align: center;
             color: var(--error-color);
@@ -254,30 +252,28 @@
         <div class="step" id="step2">
             <h2>액세스 코드 설정</h2>
             <div class="code-input-container" id="accessCodeInputs">
-                <input type="password" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
-                <input type="password" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
-                <input type="password" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
-                <input type="password" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
-                <input type="password" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
-                <input type="password" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
             </div>
             <div class="message" id="accessCodeError"></div>
-            <button class="button" id="confirmCodeButton">다음</button>
         </div>
 
         <!-- 3단계: 액세스 코드 확인 -->
         <div class="step" id="step3">
             <h2>액세스 코드 확인</h2>
             <div class="code-input-container" id="confirmCodeInputs">
-                <input type="password" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
-                <input type="password" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
-                <input type="password" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
-                <input type="password" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
-                <input type="password" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
-                <input type="password" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
+                <input type="text" class="code-input" maxlength="1" pattern="\d" inputmode="numeric">
             </div>
             <div class="message" id="confirmError"></div>
-            <button class="button" id="submitButton">보내기</button>
         </div>
     </div>
 
@@ -293,13 +289,24 @@
         let audioElement;
         let isPlaying = false;
 
-        // 단계 관리
+        // 미리 오디오 컨텍스트와 미디어 스트림 초기화
+        async function initializeAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            } catch (error) {
+                console.error("오디오 초기화 오류:", error);
+            }
+        }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', initializeAudio);
+
         function showStep(stepNumber) {
             document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
             document.getElementById(`step${stepNumber}`).classList.add('active');
         }
 
-        // 타이머 관리
         function startTimer() {
             seconds = 0;
             updateTimer();
@@ -318,17 +325,11 @@
             clearInterval(timerInterval);
         }
 
-        // 녹음 관리
         async function startRecording() {
             try {
-                if (!audioContext) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                }
                 if (audioContext.state === "suspended") {
                     await audioContext.resume();
                 }
-                
-                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 
                 mediaRecorder = new MediaRecorder(mediaStream);
                 audioChunks = [];
@@ -348,7 +349,6 @@
                     recordedBlob = new Blob(audioChunks, { type: "audio/mp4" });
                     setupAudioPlayer(recordedBlob);
                     
-                    mediaStream.getTracks().forEach(track => track.stop());
                     document.getElementById("setAccessCodeButton").style.display = "block";
                 };
 
@@ -357,21 +357,25 @@
                 isRecording = true;
                 document.getElementById("recordButton").classList.add("recording");
             } catch (error) {
-                alert("마이크 접근을 허용해주세요.");
                 console.error("녹음 오류:", error);
+                if (!mediaStream) {
+                    alert("마이크 접근을 허용해주세요.");
+                    await initializeAudio();
+                }
             }
         }
 
         function stopRecording() {
             if (mediaRecorder && isRecording) {
                 mediaRecorder.stop();
+                mediaStream.getTracks().forEach(track => track.stop());
+                initializeAudio(); // 새로운 스트림 준비
             }
             stopTimer();
             isRecording = false;
             document.getElementById("recordButton").classList.remove("recording");
         }
 
-        // 커스텀 오디오 플레이어 설정
         function setupAudioPlayer(blob) {
             const url = URL.createObjectURL(blob);
             if (!audioElement) {
@@ -416,7 +420,6 @@
             isPlaying = !isPlaying;
         }
 
-        // 액세스 코드 관리
         function setupCodeInputs(containerId) {
             const container = document.getElementById(containerId);
             const inputs = container.getElementsByClassName('code-input');
@@ -429,6 +432,23 @@
                         input.classList.add('filled');
                         if (index < inputs.length - 1) {
                             inputs[index + 1].focus();
+                        } else {
+                            // 마지막 숫자 입력 시 자동으로 다음 단계로 이동
+                            const code = getCodeFromInputs(containerId);
+                            const validation = validateAccessCode(code);
+                            
+                            if (validation.valid) {
+                                if (containerId === 'accessCodeInputs') {
+                                    showStep(3);
+                                } else if (containerId === 'confirmCodeInputs') {
+                                    verifyAndSubmit();
+                                }
+                            } else {
+                                const errorElement = document.getElementById(
+                                    containerId === 'accessCodeInputs' ? 'accessCodeError' : 'confirmError'
+                                );
+                                errorElement.textContent = validation.message;
+                            }
                         }
                     } else {
                         input.classList.remove('filled');
@@ -438,6 +458,17 @@
                 input.addEventListener('keydown', (e) => {
                     if (e.key === 'Backspace' && !e.target.value && index > 0) {
                         inputs[index - 1].focus();
+                    }
+                });
+
+                // 각 입력 필드에 포커스/블러 이벤트 추가
+                input.addEventListener('focus', () => {
+                    input.style.borderColor = 'var(--primary-color)';
+                });
+
+                input.addEventListener('blur', () => {
+                    if (!input.value) {
+                        input.style.borderColor = 'var(--border-color)';
                     }
                 });
             });
@@ -464,9 +495,22 @@
             return { valid: true };
         }
 
+        function verifyAndSubmit() {
+            const originalCode = getCodeFromInputs('accessCodeInputs');
+            const confirmCode = getCodeFromInputs('confirmCodeInputs');
+
+            if (originalCode !== confirmCode) {
+                const error = document.getElementById("confirmError");
+                error.textContent = "액세스 코드가 일치하지 않습니다.";
+                return;
+            }
+
+            // TODO: 여기에 서버로 데이터를 전송하는 로직 추가
+            alert("음성 메시지가 성공적으로 업로드되었습니다.");
+        }
+
         // 이벤트 리스너 설정
         document.addEventListener('DOMContentLoaded', function() {
-            // 녹음 버튼
             document.getElementById("recordButton").addEventListener("click", function() {
                 if (!isRecording) {
                     startRecording();
@@ -475,46 +519,14 @@
                 }
             });
 
-            // 재생 버튼
             document.getElementById("playButton").addEventListener("click", togglePlay);
 
-            // 액세스 코드 설정 버튼
             document.getElementById("setAccessCodeButton").addEventListener("click", function() {
                 showStep(2);
             });
 
-            // 코드 입력 설정
             setupCodeInputs('accessCodeInputs');
             setupCodeInputs('confirmCodeInputs');
-
-            // 다음 단계로 이동
-            document.getElementById("confirmCodeButton").addEventListener("click", function() {
-                const code = getCodeFromInputs('accessCodeInputs');
-                const validation = validateAccessCode(code);
-                
-                if (!validation.valid) {
-                    const error = document.getElementById("accessCodeError");
-                    error.textContent = validation.message;
-                    return;
-                }
-                
-                showStep(3);
-            });
-
-            // 최종 제출
-            document.getElementById("submitButton").addEventListener("click", function() {
-                const originalCode = getCodeFromInputs('accessCodeInputs');
-                const confirmCode = getCodeFromInputs('confirmCodeInputs');
-
-                if (originalCode !== confirmCode) {
-                    const error = document.getElementById("confirmError");
-                    error.textContent = "액세스 코드가 일치하지 않습니다.";
-                    return;
-                }
-
-                // TODO: 여기에 서버로 데이터를 전송하는 로직 추가
-                alert("음성 메시지가 성공적으로 업로드되었습니다.");
-            });
         });
     </script>
 </body>
