@@ -266,6 +266,83 @@
 
     <script>
         document.addEventListener('touchstart', function() {
+            // 1. 먼저 이 함수 추가
+const getSupportedMimeType = () => {
+    const types = ['audio/mp4', 'audio/webm', 'audio/ogg'];
+    return types.find(type => MediaRecorder.isTypeSupported(type)) || 'audio/webm';
+};
+
+// 2. 그 다음 이 함수 추가
+const handleRecordingError = (error) => {
+    if (error.name === 'NotAllowedError') {
+        showError("마이크 접근을 허용해주세요.");
+    } else if (error.name === 'NotFoundError') {
+        showError("마이크를 찾을 수 없습니다.");
+    } else if (error.name === 'NotReadableError') {
+        showError("마이크에 접근할 수 없습니다.");
+    } else {
+        showError("녹음 중 오류가 발생했습니다: " + error.message);
+    }
+    console.error("Recording error:", error);
+};
+
+// 3. 그 다음 이 설정 추가
+const API_CONFIG = {
+    baseUrl: process.env.API_BASE_URL || '',
+    endpoints: {
+        upload: '/api/upload'
+    }
+};
+
+// 4. 그 다음 이 클래스 추가
+class RecordingState {
+    constructor() {
+        this.isRecording = false;
+        this.audioBlob = null;
+        this.mediaStream = null;
+        this.accessCode = '';
+    }
+
+    reset() {
+        this.stopRecording();
+        this.audioBlob = null;
+        this.accessCode = '';
+    }
+
+    stopRecording() {
+        if (this.mediaStream) {
+            this.mediaStream.getTracks().forEach(track => track.stop());
+        }
+        this.isRecording = false;
+    }
+}
+
+// 5. 그 다음 이 변수와 함수들 추가
+const recordingState = new RecordingState();
+
+const sanitizeAccessCode = (code) => {
+    return code.replace(/[^0-9]/g, '').slice(0, 6);
+};
+
+const debounce = (func, wait) => {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+};
+
+const handleRecordButtonClick = debounce(() => {
+    if (!recordingState.isRecording) {
+        startRecording();
+    } else {
+        stopRecording();
+    }
+}, 300);
     if (audioContext && audioContext.state === 'suspended') {
         audioContext.resume();
     }
@@ -336,7 +413,7 @@ if (!MediaRecorder.isTypeSupported(mimeType)) {
 }
 
 mediaRecorder = new MediaRecorder(mediaStream, {
-    mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : 'audio/webm',
+    mimeType: getSupportedMimeType(),
     audioBitsPerSecond: 128000
 });
                 audioChunks = [];
@@ -371,9 +448,8 @@ mediaRecorder = new MediaRecorder(mediaStream, {
                 document.getElementById("recordButton").textContent = "중지";
                 document.getElementById("recordButton").classList.add("recording");
             } catch (error) {
-                showError("마이크 접근을 허용해주세요.");
-                console.error("Recording error:", error);
-            }
+    handleRecordingError(error);
+}
         }
 
         function stopRecording() {
@@ -443,7 +519,7 @@ mediaRecorder = new MediaRecorder(mediaStream, {
             }
         });
 
-        document.getElementById("step1Next").addEventListener("click", () => {
+        document.getElementById("recordButton").addEventListener("click", handleRecordButtonClick);
             showStep(2);
             setupNumpad('codeInput1', 'step2Next');
         });
@@ -472,7 +548,7 @@ mediaRecorder = new MediaRecorder(mediaStream, {
                 formData.append('accessCode', accessCode);
 
                 // GCP Cloud Storage에 업로드
-                const response = await fetch('/api/upload', {
+                const response = await fetch(API_CONFIG.baseUrl + API_CONFIG.endpoints.upload, {
                     method: 'POST',
                     body: formData
                 });
