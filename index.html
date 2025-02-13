@@ -266,96 +266,48 @@
 
     <script>
         document.addEventListener('touchstart', function() {
-            const getSupportedMimeType = () => {
-    const types = ['audio/mp4', 'audio/webm', 'audio/ogg'];
-    return types.find(type => MediaRecorder.isTypeSupported(type)) || 'audio/webm';
-};
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        });
 
-const handleRecordingError = (error) => {
-    if (error.name === 'NotAllowedError') {
-        showError("마이크 접근을 허용해주세요.");
-    } else if (error.name === 'NotFoundError') {
-        showError("마이크를 찾을 수 없습니다.");
-    } else if (error.name === 'NotReadableError') {
-        showError("마이크에 접근할 수 없습니다.");
-    } else {
-        showError("녹음 중 오류가 발생했습니다: " + error.message);
-    }
-    console.error("Recording error:", error);
-};
-
-const API_CONFIG = {
-    baseUrl: process.env.API_BASE_URL || '',
-    endpoints: {
-        upload: '/api/upload'
-    }
-};
-
-const debounce = (func, wait) => {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
+        const getSupportedMimeType = () => {
+            const types = ['audio/mp4', 'audio/webm', 'audio/ogg'];
+            return types.find(type => MediaRecorder.isTypeSupported(type)) || 'audio/webm';
         };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-};
 
-// 4. 그 다음 이 클래스 추가
-class RecordingState {
-    constructor() {
-        this.isRecording = false;
-        this.audioBlob = null;
-        this.mediaStream = null;
-        this.accessCode = '';
-    }
-
-    reset() {
-        this.stopRecording();
-        this.audioBlob = null;
-        this.accessCode = '';
-    }
-
-    stopRecording() {
-        if (this.mediaStream) {
-            this.mediaStream.getTracks().forEach(track => track.stop());
-        }
-        this.isRecording = false;
-    }
-}
-
-// 5. 그 다음 이 변수와 함수들 추가
-const recordingState = new RecordingState();
-
-const sanitizeAccessCode = (code) => {
-    return code.replace(/[^0-9]/g, '').slice(0, 6);
-};
-
-const debounce = (func, wait) => {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
+        const handleRecordingError = (error) => {
+            if (error.name === 'NotAllowedError') {
+                showError("마이크 접근을 허용해주세요.");
+            } else if (error.name === 'NotFoundError') {
+                showError("마이크를 찾을 수 없습니다.");
+            } else if (error.name === 'NotReadableError') {
+                showError("마이크에 접근할 수 없습니다.");
+            } else {
+                showError("녹음 중 오류가 발생했습니다: " + error.message);
+            }
+            console.error("Recording error:", error);
         };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-};
 
-const handleRecordButtonClick = debounce(() => {
-    if (!isRecording) {
-        startRecording();
-    } else {
-        stopRecording();
-    }
-}, 300);
-    if (audioContext && audioContext.state === 'suspended') {
-        audioContext.resume();
-    }
-});
+        const API_CONFIG = {
+            baseUrl: process.env.API_BASE_URL || '',
+            endpoints: {
+                upload: '/api/upload'
+            }
+        };
+
+        const debounce = (func, wait) => {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        };
+
         let audioContext;
         let mediaRecorder;
         let audioChunks = [];
@@ -390,6 +342,7 @@ const handleRecordButtonClick = debounce(() => {
                 const remainingSeconds = seconds % 60;
                 document.getElementById("timer").textContent = 
                     `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+                checkRecordingTime();
             }, 1000);
         }
 
@@ -408,23 +361,19 @@ const handleRecordButtonClick = debounce(() => {
                 }
                 
                 mediaStream = await navigator.mediaDevices.getUserMedia({ 
-    audio: {
-        sampleRate: 44100,
-        channelCount: 1,
-        echoCancellation: true,
-        noiseSuppression: true
-    }
-});
+                    audio: {
+                        sampleRate: 44100,
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true
+                    }
+                });
 
-                const mimeType = 'audio/mp4';
-if (!MediaRecorder.isTypeSupported(mimeType)) {
-    console.warn('MP4 not supported, falling back to default format');
-}
+                mediaRecorder = new MediaRecorder(mediaStream, {
+                    mimeType: getSupportedMimeType(),
+                    audioBitsPerSecond: 128000
+                });
 
-mediaRecorder = new MediaRecorder(mediaStream, {
-    mimeType: getSupportedMimeType(),
-    audioBitsPerSecond: 128000
-});
                 audioChunks = [];
 
                 mediaRecorder.ondataavailable = event => {
@@ -440,8 +389,8 @@ mediaRecorder = new MediaRecorder(mediaStream, {
                     }
                     
                     audioBlob = new Blob(audioChunks, { 
-    type: MediaRecorder.isTypeSupported(mimeType) ? mimeType : 'audio/mp4'
-});
+                        type: getSupportedMimeType()
+                    });
                     const audioUrl = URL.createObjectURL(audioBlob);
                     const audioPlayer = document.getElementById("audioPlayer");
                     audioPlayer.src = audioUrl;
@@ -457,8 +406,8 @@ mediaRecorder = new MediaRecorder(mediaStream, {
                 document.getElementById("recordButton").textContent = "중지";
                 document.getElementById("recordButton").classList.add("recording");
             } catch (error) {
-    handleRecordingError(error);
-}
+                handleRecordingError(error);
+            }
         }
 
         function stopRecording() {
@@ -520,15 +469,15 @@ mediaRecorder = new MediaRecorder(mediaStream, {
         }
 
         // 이벤트 리스너 설정
-        document.getElementById("recordButton").addEventListener("click", () => {
+        document.getElementById("recordButton").addEventListener("click", debounce(() => {
             if (!isRecording) {
                 startRecording();
             } else {
                 stopRecording();
             }
-        });
+        }, 300));
 
-        document.getElementById("recordButton").addEventListener("click", () => {
+        document.getElementById("step1Next").addEventListener("click", () => {
             showStep(2);
             setupNumpad('codeInput1', 'step2Next');
         });
@@ -648,20 +597,6 @@ mediaRecorder = new MediaRecorder(mediaStream, {
                 stopRecording();
                 showError("최대 녹음 시간(5분)에 도달했습니다.");
             }
-        }
-
-        // 타이머 함수 수정
-        function startTimer() {
-            seconds = 0;
-            document.getElementById("timer").textContent = "0:00";
-            timerInterval = setInterval(() => {
-                seconds++;
-                const minutes = Math.floor(seconds / 60);
-                const remainingSeconds = seconds % 60;
-                document.getElementById("timer").textContent = 
-                    `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-                checkRecordingTime();
-            }, 1000);
         }
 
         // 오디오 미리보기 볼륨 조절
