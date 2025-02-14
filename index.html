@@ -121,6 +121,7 @@
             margin: 20px 0;
             min-height: 36px;
             font-variant-numeric: tabular-nums;
+            display: none; /* 초기에는 숨김 상태 */
         }
 
         .audio-player {
@@ -435,6 +436,36 @@
         let recordedBlob;
         let audioElement;
         let isPlaying = false;
+        let startTime;
+        let animationFrameId;
+
+        function startTimer() {
+            const timerElement = document.getElementById("timer");
+            timerElement.style.display = "block"; // 타이머 표시
+            startTime = Date.now();
+            updateTimer();
+        }
+
+        function updateTimer() {
+            const currentTime = Date.now();
+            const elapsedTime = currentTime - startTime;
+            
+            const minutes = Math.floor(elapsedTime / 60000);
+            const seconds = Math.floor((elapsedTime % 60000) / 1000);
+            const milliseconds = Math.floor((elapsedTime % 1000) / 10);
+
+            document.getElementById("timer").textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(2, '0')}`;
+            
+            animationFrameId = requestAnimationFrame(updateTimer);
+        }
+
+        function stopTimer() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            document.getElementById("timer").style.display = "none"; // 타이머 숨김
+        }
 
         // 오디오 초기화
         async function initializeAudio() {
@@ -575,58 +606,54 @@ function showStep(stepNumber) {
             clearInterval(timerInterval);
         }
 
-async function startRecording() {
-    try {
-        // 먼저 미디어 스트림과 recorder 초기화
-        const stream = await getMediaStream();
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
+        async function startRecording() {
+            try {
+                const stream = await getMediaStream();
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
 
-        mediaRecorder.ondataavailable = event => {
-            if (event.data.size > 0) {
-                audioChunks.push(event.data);
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = async () => {
+                    if (audioChunks.length === 0) {
+                        alert("녹음된 오디오가 없습니다. 다시 시도해 주세요.");
+                        return;
+                    }
+                    
+                    recordedBlob = new Blob(audioChunks, { type: "audio/mp4" });
+                    setupAudioPlayer(recordedBlob);
+                    
+                    document.getElementById("setAccessCodeButton").style.display = "block";
+                };
+
+                if (audioContext.state === "suspended") {
+                    await audioContext.resume();
+                }
+
+                await showCountdown();
+                
+                mediaRecorder.start();
+                startTimer(); // 수정된 타이머 시작
+                isRecording = true;
+                document.getElementById("recordButton").classList.add("recording");
+            } catch (error) {
+                console.error('녹음 오류:', error);
+                if (!mediaStream) {
+                    alert("마이크 접근을 허용해주세요.");
+                }
             }
-        };
-
-        mediaRecorder.onstop = async () => {
-            if (audioChunks.length === 0) {
-                alert("녹음된 오디오가 없습니다. 다시 시도해 주세요.");
-                return;
-            }
-            
-            recordedBlob = new Blob(audioChunks, { type: "audio/mp4" });
-            setupAudioPlayer(recordedBlob);
-            
-            document.getElementById("setAccessCodeButton").style.display = "block";
-        };
-
-        // 카운트다운 시작 전에 오디오 컨텍스트 재개
-        if (audioContext.state === "suspended") {
-            await audioContext.resume();
         }
-
-        // 카운트다운 시작
-        await showCountdown();
-        
-        // 카운트다운 직후 즉시 녹음 시작
-        mediaRecorder.start();
-        startTimer();
-        isRecording = true;
-        document.getElementById("recordButton").classList.add("recording");
-    } catch (error) {
-        console.error('녹음 오류:', error);
-        if (!mediaStream) {
-            alert("마이크 접근을 허용해주세요.");
-        }
-    }
-}
 
         function stopRecording() {
             if (mediaRecorder && isRecording) {
                 mediaRecorder.stop();
                 cleanupMediaResources();
             }
-            stopTimer();
+            stopTimer(); // 수정된 타이머 정지
             isRecording = false;
             document.getElementById("recordButton").classList.remove("recording");
         }
@@ -855,7 +882,8 @@ async function startRecording() {
             
             document.getElementById("audioPlayer").style.display = "none";
             document.getElementById("setAccessCodeButton").style.display = "none";
-            document.getElementById("timer").textContent = "00:00";
+            document.getElementById("timer").style.display = "none"; // 타이머 숨김
+            document.getElementById("timer").textContent = "00:00:00";
         }
 
         // 초기화 및 이벤트 리스너 설정
