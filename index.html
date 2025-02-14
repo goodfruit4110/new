@@ -438,14 +438,14 @@
         let isPlaying = false;
         let startTime;
         let animationFrameId;
-
+        
         function startTimer() {
             const timerElement = document.getElementById("timer");
             timerElement.style.display = "block"; // 타이머 표시
             startTime = Date.now();
             updateTimer();
         }
-
+        
         function updateTimer() {
             const currentTime = Date.now();
             const elapsedTime = currentTime - startTime;
@@ -453,18 +453,31 @@
             const minutes = Math.floor(elapsedTime / 60000);
             const seconds = Math.floor((elapsedTime % 60000) / 1000);
             const milliseconds = Math.floor((elapsedTime % 1000) / 10);
-
+        
             document.getElementById("timer").textContent = 
                 `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(2, '0')}`;
             
             animationFrameId = requestAnimationFrame(updateTimer);
         }
-
+        
         function stopTimer() {
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
             }
-            document.getElementById("timer").style.display = "none"; // 타이머 숨김
+            // display: none 제거 - 타이머는 계속 표시됨
+        }
+        
+        // startRecording 함수 내부의 타이머 시작 부분
+        mediaRecorder.start();
+        startTimer(); // 여기서 새로운 타이머 시작
+        isRecording = true;
+        document.getElementById("recordButton").classList.add("recording");
+        
+        // stopRecording 함수 내부의 타이머 정지 부분
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.stop();
+            cleanupMediaResources();
+            stopTimer(); // 여기서 타이머는 정지하지만 화면에서 사라지지 않음
         }
 
         // 오디오 초기화
