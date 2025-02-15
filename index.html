@@ -584,25 +584,6 @@ function showStep(stepNumber) {
             setTimeout(() => errorElement.classList.remove('show'), 3000);
         }
 
-        function startTimer() {
-            seconds = 0;
-            updateTimer();
-            timerInterval = setInterval(updateTimer, 1000);
-        }
-
-        function updateTimer() {
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = seconds % 60;
-            const milliseconds = Math.floor((Date.now() % 1000) / 10); // Get 2 digits of milliseconds
-            document.getElementById("timer").textContent = 
-                `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(2, '0')}`;
-            seconds++;
-        }
-
-        function stopTimer() {
-            clearInterval(timerInterval);
-        }
-
         async function startRecording() {
             try {
                 const stream = await getMediaStream();
