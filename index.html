@@ -149,7 +149,7 @@
         .progress-ring circle.progress {
             stroke: var(--primary-color);
             stroke-dasharray: 251.2;
-            stroke-dashoffset: 251.2;
+            stroke-dashoffset: 0; /* 251.2에서 0으로 변경 */
             transition: stroke-dashoffset 0.1s linear;
         }
         
@@ -493,22 +493,22 @@
         function updateTimer() {
             const currentTime = Date.now();
             const elapsedTime = currentTime - startTime;
-    
+
             const minutes = Math.floor(elapsedTime / 60000);
             const seconds = Math.floor((elapsedTime % 60000) / 1000);
             const milliseconds = Math.floor((elapsedTime % 1000) / 10);
 
-            // 프로그레스 링 업데이트
+            // 프로그레스 링 업데이트 (반대 방향으로)
             const totalSeconds = minutes * 60 + seconds;
-            const progress = Math.min(totalSeconds / 180, 1); // 3분(180초) 기준
+            const progress = 1 - Math.min(totalSeconds / 180, 1); // 여기서 1에서 빼줌
             const circle = document.querySelector('.progress-ring circle.progress');
             const circumference = 251.2; // 2 * π * r (r=40)
-            const offset = circumference - (progress * circumference);
+            const offset = circumference * progress; // 계산 방식 변경
             circle.style.strokeDashoffset = offset;
 
             document.getElementById("timer").textContent = 
                 `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(2, '0')}`;
-    
+
             animationFrameId = requestAnimationFrame(updateTimer);
         }
 
