@@ -430,18 +430,16 @@
         let mediaRecorder;
         let audioChunks = [];
         let isRecording = false;
-        let timerInterval;
-        let seconds = 0;
+        let startTime;
+        let animationFrameId;
         let mediaStream;
         let recordedBlob;
         let audioElement;
         let isPlaying = false;
-        let startTime;
-        let animationFrameId;
 
         function startTimer() {
             const timerElement = document.getElementById("timer");
-            timerElement.style.display = "block"; // 타이머 표시
+            timerElement.style.display = "block"; // 타이머를 보이게 설정
             startTime = Date.now();
             updateTimer();
         }
@@ -449,14 +447,14 @@
         function updateTimer() {
             const currentTime = Date.now();
             const elapsedTime = currentTime - startTime;
-            
+    
             const minutes = Math.floor(elapsedTime / 60000);
             const seconds = Math.floor((elapsedTime % 60000) / 1000);
             const milliseconds = Math.floor((elapsedTime % 1000) / 10);
 
             document.getElementById("timer").textContent = 
                 `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(2, '0')}`;
-            
+    
             animationFrameId = requestAnimationFrame(updateTimer);
         }
 
@@ -464,7 +462,6 @@
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
             }
-            document.getElementById("timer").style.display = "none"; // 타이머 숨김
         }
 
         // 오디오 초기화
@@ -623,10 +620,10 @@ function showStep(stepNumber) {
                         alert("녹음된 오디오가 없습니다. 다시 시도해 주세요.");
                         return;
                     }
-                    
+            
                     recordedBlob = new Blob(audioChunks, { type: "audio/mp4" });
                     setupAudioPlayer(recordedBlob);
-                    
+            
                     document.getElementById("setAccessCodeButton").style.display = "block";
                 };
 
@@ -635,7 +632,7 @@ function showStep(stepNumber) {
                 }
 
                 await showCountdown();
-                
+        
                 mediaRecorder.start();
                 startTimer(); // 수정된 타이머 시작
                 isRecording = true;
@@ -652,11 +649,12 @@ function showStep(stepNumber) {
             if (mediaRecorder && isRecording) {
                 mediaRecorder.stop();
                 cleanupMediaResources();
+                stopTimer();
+                isRecording = false;
+                document.getElementById("recordButton").classList.remove("recording");
+                // 타이머는 계속 표시
             }
-            stopTimer(); // 수정된 타이머 정지
-            isRecording = false;
-            document.getElementById("recordButton").classList.remove("recording");
-        }
+}
 
         function setupAudioPlayer(blob) {
             const url = URL.createObjectURL(blob);
