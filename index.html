@@ -132,16 +132,42 @@
         }
 
         .progress-ring circle {
-            stroke: var(--border-color);
-            stroke-width: 2.5px;
+            stroke: rgba(229, 229, 234, 0.6); /* 더 연한 배경색 */
+            stroke-width: 2px; /* 두께 조정 */
             fill: none;
         }
 
         .progress-ring circle.progress {
             stroke: var(--primary-color);
             stroke-dasharray: 251.2;
-            stroke-dashoffset: 251.2; /* 다시 251.2로 변경 */
-            transition: stroke-dashoffset 0.1s linear;
+            stroke-dashoffset: 251.2;
+            transition: stroke-dashoffset 0.3s ease-in-out, stroke 0.3s ease-in-out; /* 트랜지션 효과 수정 */
+        }
+
+        .record-button.warning::before {
+            background: var(--error-color);
+        }
+
+        /* 설명 텍스트 스타일 */
+        .recording-description {
+            text-align: center;
+            color: var(--text-color);
+            opacity: 1;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .recording-description.fade-out {
+            opacity: 0;
+        }
+
+        /* 페이드아웃 애니메이션 */
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .fade-out {
+            animation: fadeOut 0.5s ease-in-out forwards;
         }
         
         .timer {
@@ -381,6 +407,7 @@
             <div class="header">
                 <h1>음성 메시지 녹음</h1>
                 <p>소중한 마음을 담아보세요</p>
+                <p class="recording-description">30초 음성메시지</p>
             </div>
     
             <div class="record-button-wrapper">
@@ -463,6 +490,9 @@
     <button class="help-button" id="helpButton" aria-label="도움말">?</button>
 
     <script>
+        const MAX_RECORDING_TIME = 30000; // 30초
+        const WARNING_TIME = 28000; // 28초
+        
         let audioContext;
         let mediaRecorder;
         let audioChunks = [];
@@ -476,6 +506,10 @@
 
         function startTimer() {
             const timerElement = document.getElementById("timer");
+
+            const descriptionElement = document.querySelector(".recording-description");
+            descriptionElement.classList.add("fade-out");
+            
             timerElement.style.display = "block"; // 타이머를 보이게 설정
             startTime = Date.now();
             updateTimer();
@@ -485,6 +519,45 @@
             const currentTime = Date.now();
             const elapsedTime = currentTime - startTime;
 
+            // 새로 추가되는 부분: 30초 체크
+            if (elapsedTime >= MAX_RECORDING_TIME) {
+                autoStopRecording();
+                return;
+            }
+
+            // 새로 추가되는 부분: 28초 경고 체크
+            if (elapsedTime >= WARNING_TIME) {
+                showWarningState();
+            }
+
+            // 경고 상태 표시 함수
+            function showWarningState() {
+                const recordButton = document.getElementById("recordButton");
+                const progressRing = document.querySelector('.progress-ring circle.progress');
+    
+                if (!recordButton.classList.contains("warning")) {
+                    recordButton.classList.add("warning");
+                    progressRing.style.stroke = 'var(--error-color)';
+                }
+            }
+
+            // 자동 녹음 중지 함수
+            function autoStopRecording() {
+                const recordButton = document.getElementById("recordButton");
+                const timerElement = document.getElementById("timer");
+    
+                recordButton.classList.add("fade-out");
+                timerElement.classList.add("fade-out");
+    
+            setTimeout(() => {
+                stopRecording();
+                recordButton.classList.remove("fade-out", "warning");
+                timerElement.classList.remove("fade-out");
+                document.querySelector('.progress-ring circle.progress').style.stroke = 'var(--primary-color)';
+                document.querySelector(".recording-description").classList.remove("fade-out");
+            }, 500);
+        }
+            
             const minutes = Math.floor(elapsedTime / 60000);
             const seconds = Math.floor((elapsedTime % 60000) / 1000);
             const milliseconds = Math.floor((elapsedTime % 1000) / 10);
@@ -635,6 +708,7 @@ function showStep(stepNumber) {
                  timerElement.textContent = "00:00:00";
                  const circle = document.querySelector('.progress-ring circle.progress');
                  circle.style.strokeDashoffset = 251.2;
+                 circle.style.stroke = 'var(--primary-color)';
                 
                 const stream = await getMediaStream();
                 mediaRecorder = new MediaRecorder(stream);
