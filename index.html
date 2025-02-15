@@ -149,7 +149,7 @@
         .progress-ring circle.progress {
             stroke: var(--primary-color);
             stroke-dasharray: 251.2;
-            stroke-dashoffset: 0; /* 251.2에서 0으로 변경 */
+            stroke-dashoffset: 251.2; /* 다시 251.2로 변경 */
             transition: stroke-dashoffset 0.1s linear;
         }
         
@@ -640,6 +640,10 @@ function showStep(stepNumber) {
 
         async function startRecording() {
             try {
+                 document.getElementById("timer").textContent = "00:00:00";
+                 const circle = document.querySelector('.progress-ring circle.progress');
+                 circle.style.strokeDashoffset = 251.2;
+                
                 const stream = await getMediaStream();
                 mediaRecorder = new MediaRecorder(stream);
                 audioChunks = [];
@@ -687,9 +691,14 @@ function showStep(stepNumber) {
                 stopTimer();
                 isRecording = false;
                 document.getElementById("recordButton").classList.remove("recording");
-                // 타이머는 계속 표시
+        
+                // 타이머 초기화 추가
+                document.getElementById("timer").textContent = "00:00:00";
+                // 프로그레스 링 초기화
+                const circle = document.querySelector('.progress-ring circle.progress');
+                circle.style.strokeDashoffset = 251.2;
             }
-}
+        }
 
         function setupAudioPlayer(blob) {
             const url = URL.createObjectURL(blob);
