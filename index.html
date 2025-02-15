@@ -491,10 +491,10 @@
 
             // 프로그레스 링 업데이트 (반대 방향으로)
             const totalSeconds = minutes * 60 + seconds;
-            const progress = 1 - Math.min(totalSeconds / 180, 1); // 여기서 1에서 빼줌
+            const progress = Math.min(totalSeconds / 180, 1); // 여기서 1에서 빼줌
             const circle = document.querySelector('.progress-ring circle.progress');
-            const circumference = 251.2; // 2 * π * r (r=40)
-            const offset = circumference * progress; // 계산 방식 변경
+            const circumference = 251.2;
+            const offset = circumference * (1 - progress); // 계산 방식 변경
             circle.style.strokeDashoffset = offset;
 
             document.getElementById("timer").textContent = 
@@ -631,7 +631,8 @@ function showStep(stepNumber) {
 
         async function startRecording() {
             try {
-                 document.getElementById("timer").textContent = "00:00:00";
+                 const timerElement = document.getElementById("timer");
+                 timerElement.textContent = "00:00:00";
                  const circle = document.querySelector('.progress-ring circle.progress');
                  circle.style.strokeDashoffset = 251.2;
                 
@@ -683,11 +684,6 @@ function showStep(stepNumber) {
                 isRecording = false;
                 document.getElementById("recordButton").classList.remove("recording");
         
-                // 타이머 초기화 추가
-                document.getElementById("timer").textContent = "00:00:00";
-                // 프로그레스 링 초기화
-                const circle = document.querySelector('.progress-ring circle.progress');
-                circle.style.strokeDashoffset = 251.2;
             }
         }
 
