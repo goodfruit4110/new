@@ -514,6 +514,32 @@
             startTime = Date.now();
             updateTimer();
         }
+        
+        function showWarningState() {
+            const recordButton = document.getElementById("recordButton");
+            const progressRing = document.querySelector('.progress-ring circle.progress');
+    
+            if (!recordButton.classList.contains("warning")) {
+                recordButton.classList.add("warning");
+                progressRing.style.stroke = 'var(--error-color)';
+            }
+        }
+
+        function autoStopRecording() {
+            const recordButton = document.getElementById("recordButton");
+            const timerElement = document.getElementById("timer");
+    
+            recordButton.classList.add("fade-out");
+            timerElement.classList.add("fade-out");
+    
+           setTimeout(() => {
+                stopRecording();
+                recordButton.classList.remove("fade-out", "warning");
+                timerElement.classList.remove("fade-out");
+                document.querySelector('.progress-ring circle.progress').style.stroke = 'var(--primary-color)';
+                document.querySelector(".recording-description").classList.remove("fade-out");
+            }, 500);
+        }
 
         function updateTimer() {
             const currentTime = Date.now();
@@ -529,34 +555,6 @@
             if (elapsedTime >= WARNING_TIME) {
                 showWarningState();
             }
-
-            // 경고 상태 표시 함수
-            function showWarningState() {
-                const recordButton = document.getElementById("recordButton");
-                const progressRing = document.querySelector('.progress-ring circle.progress');
-    
-                if (!recordButton.classList.contains("warning")) {
-                    recordButton.classList.add("warning");
-                    progressRing.style.stroke = 'var(--error-color)';
-                }
-            }
-
-            // 자동 녹음 중지 함수
-            function autoStopRecording() {
-                const recordButton = document.getElementById("recordButton");
-                const timerElement = document.getElementById("timer");
-    
-                recordButton.classList.add("fade-out");
-                timerElement.classList.add("fade-out");
-    
-            setTimeout(() => {
-                stopRecording();
-                recordButton.classList.remove("fade-out", "warning");
-                timerElement.classList.remove("fade-out");
-                document.querySelector('.progress-ring circle.progress').style.stroke = 'var(--primary-color)';
-                document.querySelector(".recording-description").classList.remove("fade-out");
-            }, 500);
-        }
             
             const minutes = Math.floor(elapsedTime / 60000);
             const seconds = Math.floor((elapsedTime % 60000) / 1000);
